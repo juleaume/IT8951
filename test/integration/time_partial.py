@@ -1,5 +1,6 @@
 import cProfile
 import io
+import os
 import pstats
 from itertools import cycle
 from timeit import default_timer
@@ -8,6 +9,8 @@ from PIL import ImageDraw, ImageFont
 
 from IT8951 import constants
 from IT8951.display import AutoEPDDisplay
+
+_VCOM = float(os.environ.get("VCOM", -1.50))
 
 
 def place_text(img, text, x, y):
@@ -40,7 +43,7 @@ class Profiler:
 
 def main():
     print("Initializing...")
-    display = AutoEPDDisplay(vcom=-2.06)
+    display = AutoEPDDisplay(vcom=_VCOM)
 
     display.clear()
 

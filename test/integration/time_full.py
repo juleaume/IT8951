@@ -1,9 +1,12 @@
 import cProfile
 import io
+import os
 import pstats
 
 from IT8951 import constants
 from IT8951.display import AutoEPDDisplay
+
+_VCOM = float(os.environ.get("VCOM", -1.50))
 
 
 class Profiler:
@@ -24,7 +27,7 @@ class Profiler:
 
 def main():
     print("Initializing...")
-    display = AutoEPDDisplay(vcom=-2.06, spi_hz=24000000)
+    display = AutoEPDDisplay(vcom=_VCOM, spi_hz=24000000)
 
     display.clear()
 
