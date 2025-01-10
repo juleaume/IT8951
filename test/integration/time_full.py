@@ -1,10 +1,10 @@
-
 import cProfile
-import pstats
 import io
+import pstats
 
 from IT8951 import constants
 from IT8951.display import AutoEPDDisplay
+
 
 class Profiler:
     def __init__(self):
@@ -15,14 +15,15 @@ class Profiler:
         f(*args, **kwargs)
         self.pr.disable()
 
-    def print_results(self, sortby='cumulative'):
+    def print_results(self, sortby="cumulative"):
         s = io.StringIO()
         ps = pstats.Stats(self.pr, stream=s).sort_stats(sortby)
         ps.print_stats()
         print(s.getvalue())
 
+
 def main():
-    print('Initializing...')
+    print("Initializing...")
     display = AutoEPDDisplay(vcom=-2.06, spi_hz=24000000)
 
     display.clear()
@@ -30,18 +31,16 @@ def main():
     # so that we're not timing the previous operations
     display.epd.wait_display_ready()
 
-    print('Doing update...')
+    print("Doing update...")
 
     # draw all black
     display.frame_buf.paste(0x00, (0, 0, display.width, display.height))
 
     p = Profiler()
-    p.profile_func(
-        display.draw_partial,
-        constants.DisplayModes.DU   # should see what best mode is here
-    )
+    p.profile_func(display.draw_partial, constants.DisplayModes.DU)  # should see what best mode is here
     p.profile_func(display.epd.spi.wait_ready)
     p.print_results()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

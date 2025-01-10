@@ -1,5 +1,8 @@
 # IT8951
 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+
 This Python 3 module implements a driver for the IT8951 e-paper controller, via SPI.
 The driver was developed using the 6-inch e-Paper HAT from Waveshare. It hopefully will work for
 other (related) hardware too.

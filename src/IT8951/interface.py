@@ -1,11 +1,11 @@
-
-from . import constants
-from .constants import Commands, Registers, PixelModes
-
 from time import sleep
 
+from . import constants
+from .constants import Commands, PixelModes, Registers
+
+
 class EPD:
-    '''
+    """
     An interface to the electronic paper display (EPD).
 
     Parameters
@@ -18,20 +18,21 @@ class EPD:
     **spi_kwargs
          Extra arguments will be passed to the SPI class's initialization.
          See spi.pyx for details.
-    '''
+    """
 
     def __init__(self, vcom=-1.5, **spi_kwargs):
 
         # do this here so we don't have to in the case
         # of a "virtual" display
         from .spi import SPI
+
         self.spi = SPI(**spi_kwargs)
 
-        self.width            = None
-        self.height           = None
-        self.img_buf_address  = None
+        self.width = None
+        self.height = None
+        self.img_buf_address = None
         self.firmware_version = None
-        self.lut_version      = None
+        self.lut_version = None
         self.update_system_info()
 
         self._set_img_buf_base_addr(self.img_buf_address)
@@ -42,7 +43,7 @@ class EPD:
         self.set_vcom(vcom)
 
     def load_img_area(self, buf, rotate_mode=constants.Rotate.NONE, xy=None, dims=None, pixel_format=None):
-        '''
+        """
         Write the pixel data in buf (an array of bytes, 1 per pixel) to device memory.
         This function does not actually display the image (see EPD.display_area).
 
@@ -62,7 +63,7 @@ class EPD:
         dims : (int, int), optional
             The dimensions of the area being pasted. If xy is omitted (or set to None), the
             dimensions are assumed to be the dimensions of the display area.
-        '''
+        """
 
         endian_type = constants.EndianTypes.BIG
 
@@ -76,9 +77,9 @@ class EPD:
 
         try:
             bpp = {
-                PixelModes.M_2BPP : 2,
-                PixelModes.M_4BPP : 4,
-                PixelModes.M_8BPP : 8,
+                PixelModes.M_2BPP: 2,
+                PixelModes.M_4BPP: 4,
+                PixelModes.M_8BPP: 8,
             }[pixel_format]
         except KeyError:
             raise ValueError("invalid pixel format") from None
@@ -88,42 +89,42 @@ class EPD:
         self._load_img_end()
 
     def display_area(self, xy, dims, display_mode):
-        '''
+        """
         Update a portion of the display to whatever is currently stored in device memory
         for that region. Updated data can be written to device memory using EPD.write_img_area
-        '''
+        """
         self.spi.write_cmd(Commands.DPY_AREA, xy[0], xy[1], dims[0], dims[1], display_mode)
 
     def update_system_info(self):
-        '''
+        """
         Get information about the system, and store it in class attributes
-        '''
+        """
         self.spi.write_cmd(Commands.GET_DEV_INFO)
         data = self.spi.read_data(20)
 
         if all(x == 0 for x in data):
             raise RuntimeError("communication with device failed")
 
-        self.width  = data[0]
+        self.width = data[0]
         self.height = data[1]
         self.img_buf_address = data[3] << 16 | data[2]
-        self.firmware_version = ''.join([chr(x>>8)+chr(x&0xFF) for x in data[4:12]])
-        self.lut_version      = ''.join([chr(x>>8)+chr(x&0xFF) for x in data[12:20]])
+        self.firmware_version = "".join([chr(x >> 8) + chr(x & 0xFF) for x in data[4:12]])
+        self.lut_version = "".join([chr(x >> 8) + chr(x & 0xFF) for x in data[12:20]])
 
     def get_vcom(self):
-        '''
+        """
         Get the device's current value for VCOM voltage
-        '''
+        """
         self.spi.write_cmd(Commands.VCOM, 0)
         vcom_int = self.spi.read_int()
-        return -vcom_int/1000
+        return -vcom_int / 1000
 
     def set_vcom(self, vcom):
-        '''
+        """
         Set the device's VCOM voltage
-        '''
+        """
         self._validate_vcom(vcom)
-        vcom_int = int(-1000*vcom)
+        vcom_int = int(-1000 * vcom)
         self.spi.write_cmd(Commands.VCOM, 1, vcom_int)
 
     def _validate_vcom(self, vcom):
@@ -141,7 +142,7 @@ class EPD:
         self.spi.write_cmd(Commands.SLEEP)
 
     def wait_display_ready(self):
-        while(self.read_register(Registers.LUTAFSR)):
+        while self.read_register(Registers.LUTAFSR):
             sleep(0.01)
 
     def _load_img_start(self, endian_type, pixel_format, rotate_mode):
@@ -156,23 +157,23 @@ class EPD:
         self.spi.write_cmd(Commands.LD_IMG_END)
 
     def read_register(self, address):
-        '''
+        """
         Read a device register
-        '''
+        """
         self.spi.write_cmd(Commands.REG_RD, address)
         return self.spi.read_int()
 
     def write_register(self, address, val):
-        '''
+        """
         Write to a device register
-        '''
+        """
         self.spi.write_cmd(Commands.REG_WR, address)
         self.spi.write_data((val,))
 
     def _set_img_buf_base_addr(self, address):
         word0 = address >> 16
         word1 = address & 0xFFFF
-        self.write_register(Registers.LISAR+2, word0)
+        self.write_register(Registers.LISAR + 2, word0)
         self.write_register(Registers.LISAR, word1)
 
     ##########

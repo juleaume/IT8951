@@ -1,14 +1,14 @@
-
 import warnings
+
 from PIL import Image, ImageChops
 
-from .constants import DisplayModes, PixelModes, low_bpp_modes
-from .interface import EPD
 from . import img_manip
+from .constants import DisplayModes, low_bpp_modes, PixelModes
+from .interface import EPD
 
 
 class AutoDisplay:
-    '''
+    """
     This base class tracks changes to its frame_buf attribute, and automatically
     updates only the portions of the display that need to be updated
 
@@ -17,16 +17,16 @@ class AutoDisplay:
 
     Note: width and height should be of the physical display, and don't depend on
     rotation---they will be swapped automatically if rotate is set to CW or CCW
-    '''
+    """
 
     def __init__(self, width, height, rotate=None, mirror=False, track_gray=False):
         self._set_rotate(rotate, mirror)
 
         self.display_dims = (width, height)
-        if rotate in ('CW', 'CCW'):
-            self.frame_buf = Image.new('L', (height, width), 0xFF)
+        if rotate in ("CW", "CCW"):
+            self.frame_buf = Image.new("L", (height, width), 0xFF)
         else:
-            self.frame_buf = Image.new('L', (width, height), 0xFF)
+            self.frame_buf = Image.new("L", (width, height), 0xFF)
 
         # keep track of what we have updated,
         # so that we can automatically do partial updates of only the
@@ -49,10 +49,10 @@ class AutoDisplay:
         return self.frame_buf.height
 
     def _get_frame_buf(self):
-        '''
+        """
         Return the frame buf, rotated according to flip. Always returns a copy, even
         when rotate is None.
-        '''
+        """
         if self._rotate_method is None:
             return self.frame_buf.copy()
 
@@ -62,17 +62,17 @@ class AutoDisplay:
 
         if not mirror:
             methods = {
-                None   : None,
-                'CW'   : Image.Transpose.ROTATE_270,
-                'CCW'  : Image.Transpose.ROTATE_90,
-                'flip' : Image.Transpose.ROTATE_180,
+                None: None,
+                "CW": Image.Transpose.ROTATE_270,
+                "CCW": Image.Transpose.ROTATE_90,
+                "flip": Image.Transpose.ROTATE_180,
             }
         else:
             methods = {
-                None   : Image.Transpose.FLIP_LEFT_RIGHT,
-                'CW'   : Image.Transpose.TRANSPOSE,
-                'CCW'  : Image.Transpose.TRANSVERSE,
-                'flip' : Image.Transpose.FLIP_TOP_BOTTOM,
+                None: Image.Transpose.FLIP_LEFT_RIGHT,
+                "CW": Image.Transpose.TRANSPOSE,
+                "CCW": Image.Transpose.TRANSVERSE,
+                "flip": Image.Transpose.FLIP_TOP_BOTTOM,
             }
 
         if rotate not in methods:
@@ -81,12 +81,12 @@ class AutoDisplay:
         self._rotate_method = methods[rotate]
 
     def draw_full(self, mode):
-        '''
+        """
         Write the full image to the device, and display it using mode
-        '''
+        """
         frame = self._get_frame_buf()
 
-        self.update(frame.tobytes(), (0,0), self.display_dims, mode)
+        self.update(frame.tobytes(), (0, 0), self.display_dims, mode)
 
         if self.track_gray:
             if mode == DisplayModes.DU:
@@ -98,10 +98,10 @@ class AutoDisplay:
         self.prev_frame = frame
 
     def draw_partial(self, mode):
-        '''
+        """
         Write only the rectangle bounding the pixels of the image that have changed
         since the last call to draw_full or draw_partial
-        '''
+        """
 
         if self.prev_frame is None:  # first call since initialization
             self.draw_full(mode)
@@ -133,23 +133,23 @@ class AutoDisplay:
                 img_manip.make_changes_bw(frame.crop(diff_box), buf)
 
             xy = (diff_box[0], diff_box[1])
-            dims = (diff_box[2]-diff_box[0], diff_box[3]-diff_box[1])
+            dims = (diff_box[2] - diff_box[0], diff_box[3] - diff_box[1])
 
             self.update(buf.tobytes(), xy, dims, mode)
 
         self.prev_frame = frame
 
     def clear(self):
-        '''
+        """
         Clear display, device image buffer, and frame buffer (e.g. at startup)
-        '''
+        """
         # set frame buffer to all white
         self.frame_buf.paste(0xFF, box=(0, 0, self.width, self.height))
         self.draw_full(DisplayModes.INIT)
 
     @classmethod
     def _compute_diff_box(cls, a, b, round_to=2):
-        '''
+        """
         Find the four coordinates giving the bounding box of differences between a and b
         making sure they are divisible by round_to
 
@@ -164,7 +164,7 @@ class AutoDisplay:
 
         round_to : int
             The multiple to align the bbox to
-        '''
+        """
         box = ImageChops.difference(a, b).getbbox()
         if box is None:
             return None
@@ -172,21 +172,21 @@ class AutoDisplay:
 
     @staticmethod
     def _round_bbox(box, round_to=4):
-        '''
+        """
         Round a bounding box so the edges are divisible by round_to
-        '''
+        """
         minx, miny, maxx, maxy = box
-        minx -= minx%round_to
-        maxx += round_to-1 - (maxx-1)%round_to
-        miny -= miny%round_to
-        maxy += round_to-1 - (maxy-1)%round_to
+        minx -= minx % round_to
+        maxx += round_to - 1 - (maxx - 1) % round_to
+        miny -= miny % round_to
+        maxy += round_to - 1 - (maxy - 1) % round_to
         return (minx, miny, maxx, maxy)
 
     @staticmethod
     def _merge_bbox(a, b):
-        '''
+        """
         Return a bounding box that contains both bboxes a and b
-        '''
+        """
         if a is None:
             return b
 
@@ -204,13 +204,11 @@ class AutoDisplay:
 
 
 class AutoEPDDisplay(AutoDisplay):
-    '''
+    """
     This class initializes the EPD, and uses it to display the updates
-    '''
+    """
 
-    def __init__(self, epd=None, vcom=-2.06,
-                 bus=0, device=0, spi_hz=24000000,
-                 **kwargs):
+    def __init__(self, epd=None, vcom=-2.06, bus=0, device=0, spi_hz=24000000, **kwargs):
 
         epd = EPD(vcom=vcom, bus=bus, device=device, data_hz=spi_hz)
 
@@ -228,28 +226,19 @@ class AutoEPDDisplay(AutoDisplay):
 
         # send image to controller
         self.epd.wait_display_ready()
-        self.epd.load_img_area(
-            data,
-            xy=xy,
-            dims=dims,
-            pixel_format=pixel_format
-        )
+        self.epd.load_img_area(data, xy=xy, dims=dims, pixel_format=pixel_format)
 
         # display sent image
-        self.epd.display_area(
-            xy,
-            dims,
-            mode
-        )
+        self.epd.display_area(xy, dims, mode)
 
 
 class VirtualEPDDisplay(AutoDisplay):
-    '''
+    """
     This class opens a Tkinter window showing what would be displayed on the
     EPD, to allow testing without a physical e-paper device
-    '''
+    """
 
-    def __init__(self, dims=(800,600), **kwargs):
+    def __init__(self, dims=(800, 600), **kwargs):
         AutoDisplay.__init__(self, dims[0], dims[1], **kwargs)
 
         import tkinter as tk
@@ -270,7 +259,7 @@ class VirtualEPDDisplay(AutoDisplay):
         data_img = Image.frombytes(self._get_frame_buf().mode, dims, bytes(data))
         self.pil_img.paste(data_img, box=xy)
         self.tk_img = self.photoimage(self.pil_img)
-        self.panel.configure(image=self.tk_img) # not sure if this is actually necessary
+        self.panel.configure(image=self.tk_img)  # not sure if this is actually necessary
 
         # allow Tk to do whatever it needs to do
         self.root.update()
