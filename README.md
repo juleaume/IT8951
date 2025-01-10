@@ -37,6 +37,12 @@ stated in the IT8951 chip spec [here](https://www.waveshare.com/w/upload/1/18/IT
 But, you could try setting higher and seeing if it works anyway.
 It is set by passing the `spi_hz` argument to the Display or EPD classes (see example in `tests/integration/tests.py`).
 
+#### Troubleshooting
+
+#####  communication with device failed (issue #62) 
+
+If you followed the [Waveshare tutorals](https://www.waveshare.com/wiki/6inch_HD_e-Paper_HAT#Working_with_Raspberry_Pi_.28SPI.29) and have edited the `/boot/firmware/config.txt` file to have commented `dtparam=spi=on` and added `dtoverlay=spi0-0cs`, revert that change.
+
 #### Running the code on Linux desktop
 
 You can run this library on desktop Linux distributions (e.g. on Ubuntu) using a "virtual" display, for testing and development. Instead of appearing on a real ePaper device, the contents will be shown in a `TKInter` window on the desktop. For an example, see the integration tests at [test/integration/test.py](https://github.com/GregDMeyer/IT8951/blob/master/test/integration/test.py) when passed the `-v` option.
